@@ -1,0 +1,25 @@
+from fastapi import FastAPI
+from app.api.v1.routes import files, process
+from fastapi.middleware.cors import CORSMiddleware
+
+
+origins = [
+   "*"  # Allow all origins (use with caution in production)
+]
+
+app = FastAPI(title="FastAPI Enterprise Application")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # List of allowed origins
+    allow_credentials=True,  # Allow cookies and credentials
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
+
+# Include routers
+app.include_router(files.router, prefix="/api/v1/files", tags=["Files"])
+app.include_router(process.router, prefix="/api/v1/process", tags=["Processing"])
+
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the FastAPI Enterprise Application"}
