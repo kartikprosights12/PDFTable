@@ -1,2 +1,4 @@
-./output/
-./uploads/
+./output/*
+./uploads/*
+/output/*
+/uploads/*
