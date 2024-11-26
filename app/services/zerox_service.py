@@ -17,7 +17,6 @@ async def process_file_with_zerox(file_path: str, output_dir: str, select_pages=
     os.environ["OPENAI_API_KEY"] = settings.OPENAI_API_KEY
     # Run the zerox processing
     try:
-        print(os.environ["OPENAI_API_KEY"])
         print(f"Processing file with Zerox: {settings.ZEROX_PROVIDER}/{settings.ZEROX_MODEL}")
         result = await zerox(
             file_path=file_path,
