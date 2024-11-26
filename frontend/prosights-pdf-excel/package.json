@@ -9,11 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@airtable/blocks": "^1.18.2",
     "@reduxjs/toolkit": "^2.3.0",
     "ag-grid-community": "^32.3.3",
     "ag-grid-react": "^32.3.3",
-    "airtable": "^0.12.2",
     "autoprefixer": "^10.4.20",
     "dotenv": "^16.4.5",
     "next": "15.0.3",
