@@ -1,0 +1,24 @@
+services:
+  backend:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: fastapi_app
+    ports:
+      - "8000:8000"
+    restart: always
+    env_file:
+      - ./app/.env  # Mount .env file
+    environment:
+      - ENV_FILE_PATH=/app/.env
+
+  frontend:
+    build:
+      context: ./frontend/prosights-pdf-excel
+      dockerfile: Dockerfile
+    container_name: nextjs_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - ENV=production
+    restart: always
