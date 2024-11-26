@@ -18,7 +18,7 @@ const UploadContainer: React.FC = () => {
 
   // Local state
   const [rowData, setRowData] = useState<any[]>([]);
-  const [fields, setFields] = useState<string[]>([""]); // Fields state
+  const [fields] = useState<string[]>([""]); // Fields state
   const [columnDefs, setColumnDefs] = useState<any[]>([
     { headerName: "Document", field: "document", flex: 1 },
     { headerName: "Date", field: "date", flex: 1 },

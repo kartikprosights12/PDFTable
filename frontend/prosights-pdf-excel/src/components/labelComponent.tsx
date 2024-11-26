@@ -1,6 +1,11 @@
 import React from 'react';
 
-const LabelWithIcon = ({ label, htmlFor, icon }) => {
+interface LabelWithIconProps {
+  label: string; // Label is a string
+  htmlFor: string; // HTML element ID this label is associated with
+  icon?: React.ReactNode; // Optional icon prop for a React element
+}
+const LabelWithIcon: React.FC<LabelWithIconProps> = ({ label, htmlFor, icon }) => {
   return (
     <label
       htmlFor={htmlFor}

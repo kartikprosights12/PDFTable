@@ -4,12 +4,12 @@ import { uploadPDF } from "../../utils/api";
 
 function* handleUpload(action: {
   type: string;
-  payload: { file: File; fields: string[]; columnDefs: any };
+  payload: { id: string, file: File; fields: string[]; columnDefs: any };
 }): Generator {
   const { id, file, fields, columnDefs } = action.payload;
 
   try {
-    const response: { result: { data: {}[] } } = yield call(
+    const response: { result: { data: [] } } = yield call(
       uploadPDF,
       file,
       fields,

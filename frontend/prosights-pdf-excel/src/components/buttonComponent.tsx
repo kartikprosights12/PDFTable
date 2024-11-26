@@ -1,7 +1,11 @@
 // ButtonComponent.jsx
 import React from 'react';
-
-const ButtonComponent = ({ label, onClick, icon }) => {
+interface ButtonProps {
+  label: string; // or React.ReactNode if it can include JSX
+  onClick: () => void; // type for the click handler
+  icon?: React.ReactNode; // optional prop for an icon
+}
+const ButtonComponent: React.FC<ButtonProps> = ({ label, onClick, icon }) => {
   return (
     <button
       onClick={onClick}
