@@ -1,0 +1,85 @@
+# Python specific
+*.py[cod]
+__pycache__/
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.manifest
+
+# Virtual environment
+venv/
+.env/
+env/
+ENV/
+
+# Pipenv
+Pipfile.lock
+
+# Poetry
+poetry.lock
+
+# Pytest
+.cache/
+pytest_cache/
+
+# Mypy
+.mypy_cache/
+
+# Pydantic models
+*.schema.json
+
+# Logs
+*.log
+logs/
+*.out
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+
+# Byte-compiled files
+*.pyc
+
+# Local settings
+*.env
+*.secret
+
+# Static and media (if applicable)
+staticfiles/
+media/
+
+# Docker
+*.dockerignore
+docker-compose.override.yml
+
+# Ignore SQLite database files
+*.sqlite3
+*.db
+
+# Ignore Gunicorn PID files
+gunicorn.pid
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Coverage and testing
+coverage/
+*.cover
+*.coverage
+coverage.xml
+nosetests.xml
+htmlcov/
+
+# Dependency directories
+__pypackages__/
+
+# Miscellaneous
+*.bak
+*.swp
