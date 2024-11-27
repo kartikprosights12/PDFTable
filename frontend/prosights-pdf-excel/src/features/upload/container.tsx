@@ -10,9 +10,12 @@ import { v4 as uuidv4 } from "uuid";
 import { PiColumnsPlusRightFill } from "react-icons/pi";
 import { LuUpload } from "react-icons/lu";
 import LabelWithIcon from "@/components/labelComponent";
+
 const UploadContainer: React.FC = () => {
   const dispatch = useDispatch();
 
+  const userId = useSelector((state: RootState) => state.user.userId) || localStorage.getItem('userEmail');
+  console.log('userId ----', userId);
   // Redux state
   const uploads = useSelector((state: RootState) => state.upload.uploads);
 
@@ -101,6 +104,7 @@ const UploadContainer: React.FC = () => {
           file,
           fields,
           columnDefs,
+          userId: userId || ""
         })
       );
     });

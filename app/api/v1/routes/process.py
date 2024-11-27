@@ -1,8 +1,13 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Query, Body
+from datetime import datetime
+from fastapi import APIRouter, UploadFile, File, HTTPException, Query, Body, Depends
+from app.services.documents import create_document_record
 from app.services.zerox_service import process_file_with_zerox
 import os
 from pathlib import Path
 from app.services.litellm import call_model_with_prompt
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.database import get_db
+import json
 router = APIRouter()
 
 UPLOAD_DIR = "uploads"  # Directory to store uploaded files
@@ -14,8 +19,9 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 async def process_uploaded_file_via_zerox(
     file: UploadFile = File(..., description="File to upload and process"),
     select_pages: list[int] = Query(None, description="List of pages to process (1-indexed)"),
-    keys: str = Body(None, description="Custom system prompt for the model"),
-    columnDefs: str = Body(None, description="Column definitions for the table")
+    user: str = Body(None, description="User ID"),
+    columnDefs: str = Body(None, description="Column definitions for the table"),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Upload a file and process it using Zerox.
@@ -23,6 +29,7 @@ async def process_uploaded_file_via_zerox(
     # Save the uploaded file to the upload directory
     file_path = os.path.join(UPLOAD_DIR, file.filename)
     print("columnDefs", columnDefs)
+    print("user", user)
     try:
         with open(file_path, "wb") as f:
             f.write(await file.read())
@@ -31,14 +38,20 @@ async def process_uploaded_file_via_zerox(
 
     try:
         # Process the file with Zerox
-        print(keys)
         result = await process_file_with_zerox(
             file_path=file_path,
             output_dir=OUTPUT_DIR,
             select_pages=select_pages
         )
-        result = await call_model_with_prompt(result.pages,columnDefs)
-        return {"message": "File processed successfully", "result": result}
+        
+        structure_as_json = json.dumps([
+            {"content": page.content, "content_length": page.content_length, "page": page.page}
+            for page in result.pages
+        ])
+        final_result = await call_model_with_prompt(result.pages,columnDefs)
+        document_id = await create_document_record(file.filename, datetime.now(), final_result, structure_as_json, user, db)
+        
+        return {"message": "File processed successfully", "result": final_result, "document_id": document_id}
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:

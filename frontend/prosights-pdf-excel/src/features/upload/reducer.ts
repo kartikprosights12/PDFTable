@@ -8,6 +8,7 @@ interface UploadState {
     loading: boolean; // Loading state for this specific file
     error?: string; // Error message if the upload fails
     columnDefs: any;
+    userId: string;
   }[];
 }
 
@@ -18,13 +19,14 @@ const uploadSlice = createSlice({
     name: "upload",
     initialState,
     reducers: {
-      startUpload(state, action: PayloadAction<{ id: string; file: File; columnDefs: any; fields: string[] }>) {
+      startUpload(state, action: PayloadAction<{ id: string; file: File; columnDefs: any; fields: string[], userId: string }>) {
         state.uploads.push({
           id: action.payload.id, // Use the provided ID
           file: action.payload.file,
           results: [],
           loading: true,
-          columnDefs: action.payload.columnDefs,
+          columnDefs: action.payload.columnDefs,    
+          userId: action.payload.userId,
         });
       },
       uploadSuccess(
