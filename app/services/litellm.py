@@ -38,6 +38,8 @@ async def call_model_with_prompt(content: str, columnDefs: str, max_tokens: int 
             f"- even if you have multiple data aginst the same key combine them into a string with comma separated values and don't create a new row for it.\n"
             f"- if you have a list of objects, make it a string with comma separated values and don't create a new row for it.\n"
             f"- when generating the json the key of the value has to be the field name from the columnDefs \n"
+            f"- the field/key name in json should small case with spaces changed with _ \n"
+            f"- no comments to be added in the json or code that you send, it needs to be just in pure json structure \n"
         )        
         messages = [{"role": "user", "content": prompt}]
         print("messages: \n\n  ", messages)
