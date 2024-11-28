@@ -83,8 +83,8 @@ const UploadContainer: React.FC = () => {
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(event.target.files || []);
-    if (selectedFiles.length > 10) {
-      alert("You can upload a maximum of 10 files.");
+    if (selectedFiles.length > 51) {
+      alert("You can upload a maximum of 50 files.");
       return;
     }
 
