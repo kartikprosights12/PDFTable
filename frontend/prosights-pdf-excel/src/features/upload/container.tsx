@@ -9,6 +9,7 @@ import ButtonComponent from "../../components/buttonComponent";
 import { v4 as uuidv4 } from "uuid";
 import LabelWithIcon from "@/components/labelComponent";
 import { PiUploadFill, PiExportFill, PiColumnsPlusRightFill } from "react-icons/pi";
+import { urls } from "@/config/urls";
 
 const UploadContainer: React.FC = () => {
   const dispatch = useDispatch();
@@ -170,7 +171,7 @@ const UploadContainer: React.FC = () => {
     try {
       // Call the API with the search text
       const response = await fetch(
-        `http://localhost:8000/api/v1/files/columns?query=${encodeURIComponent(text)}`
+        urls.apiBaseUrl+`/api/v1/files/columns?query=${encodeURIComponent(text)}`
       );
       const data = await response.json();
       let parsedData = data.data;
