@@ -4,7 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 origins = [
-   "*"  # Allow all origins (use with caution in production)
+    "https://matrix.prosights.co",  # Add your specific domain
+    "http://localhost:3000",       # For local development
 ]
 
 app = FastAPI(title="FastAPI Enterprise Application")
