@@ -11,6 +11,7 @@ services:
       - ./app/.env  # Mount .env file
     environment:
       - ENV_FILE_PATH=/app/.env
+      - DATABASE_URL=postgresql+asyncpg://postgres:;Q8S&)-=;<e(>mV4@host:5432/matrix-dev
 
   frontend:
     build:
