@@ -9,7 +9,6 @@ import ButtonComponent from "../../components/buttonComponent";
 import { v4 as uuidv4 } from "uuid";
 import LabelWithIcon from "@/components/labelComponent";
 import { PiUploadFill, PiExportFill, PiColumnsPlusRightFill } from "react-icons/pi";
-import './styles.css';
 
 const UploadContainer: React.FC = () => {
   const dispatch = useDispatch();

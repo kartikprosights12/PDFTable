@@ -1,5 +1,6 @@
 // src/pages/_app.tsx
 import "../styles/globals.css";
+import '@/features/upload/styles.css';
 import type { AppProps } from "next/app";
 import { Auth0Provider } from "@auth0/auth0-react";
 import { Provider } from "react-redux";
