@@ -16,5 +16,6 @@ RUN ls -lrta
 
 # Ensure the application uses the .env file
 ENV ENV_FILE_PATH=/app/.env
+ENV GOOGLE_APPLICATION_CREDENTIALS=/app/prosights-gcp-creds.json
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

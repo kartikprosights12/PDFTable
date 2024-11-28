@@ -9,17 +9,23 @@ const local: EnvUrls = {
 };
 
 const development: EnvUrls = {
-  apiBaseUrl: "http://34.30.62.54:8000",
-  frontendUrl: "http://34.30.62.54:3000",
+  apiBaseUrl: "https://matrix-api.prosights.co",
+  frontendUrl: "https://matrix.prosights.co",
+};
+
+const production: EnvUrls = {
+  apiBaseUrl: "https://matrix-api.prosights.co",
+  frontendUrl: "https://matrix.prosights.co",
 };
 
 const config: Record<string, EnvUrls> = {
   development,
-  local
+  local,
+  production,
 };
 const activeEnv = process.env.NEXT_PUBLIC_ENV || process.env.NODE_ENV || "development";
 
-console.log('process.env.NODE_ENV', process.env.NODE_ENV);
-console.log('process.env.NEXT_PUBLIC_ENV', process.env.NEXT_PUBLIC_ENV);
+console.log('Active Environment:', activeEnv);
 
 export const urls = config[activeEnv as keyof typeof config];
+console.log('Selected URLs:', urls);
