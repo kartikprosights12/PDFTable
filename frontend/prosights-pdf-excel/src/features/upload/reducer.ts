@@ -19,16 +19,35 @@ const uploadSlice = createSlice({
     name: "upload",
     initialState,
     reducers: {
-      startUpload(state, action: PayloadAction<{ id: string; file: File; columnDefs: any; fields: string[], userId: string }>) {
-        state.uploads.push({
-          id: action.payload.id, // Use the provided ID
-          file: action.payload.file,
-          results: [],
-          loading: true,
-          columnDefs: action.payload.columnDefs,    
-          userId: action.payload.userId,
-        });
-      },
+        startUpload(
+            state,
+            action: PayloadAction<{
+              id: string;
+              file: File;
+              columnDefs: any;
+              fields: string[];
+              userId: string;
+            }>
+          ) {
+            const existingUpload = state.uploads.find(
+              (u) => u.file.name === action.payload.file.name
+            );
+      
+            if (existingUpload) {
+              // Update the columnDefs for the existing file instead of adding a duplicate
+              existingUpload.columnDefs = action.payload.columnDefs;
+            } else {
+              // Add a new upload if it doesn't exist already
+              state.uploads.push({
+                id: action.payload.id, // Use the provided ID
+                file: action.payload.file,
+                results: [],
+                loading: true,
+                columnDefs: action.payload.columnDefs,
+                userId: action.payload.userId,
+              });
+            }
+          },
       uploadSuccess(
         state,
         action: PayloadAction<{ id: string; results: { [key: string]: any }[] }>

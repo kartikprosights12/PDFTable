@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.v1.routes import files, process, users
+from app.api.v1.routes import documents, files, process, users
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -20,6 +20,7 @@ app.add_middleware(
 app.include_router(files.router, prefix="/api/v1/files", tags=["Files"])
 app.include_router(process.router, prefix="/api/v1/process", tags=["Processing"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
+app.include_router(documents.router, prefix="/api/v1/documents", tags=["Documents"])
 
 @app.get("/")
 def read_root():

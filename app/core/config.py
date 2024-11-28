@@ -5,7 +5,6 @@ load_dotenv()
 
 class Settings:
     PROJECT_NAME: str = "Prosights OS"
-    EXTERNAL_API_URL: str = "http://example.com/process-file"
     ZEROX_MODEL: str = "gpt-4o"  # Update this based on your desired model
     ZEROX_PROVIDER: str = "openai"  # Update this to match the model's provider
 

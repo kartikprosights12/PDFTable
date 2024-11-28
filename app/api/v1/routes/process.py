@@ -1,6 +1,7 @@
 from datetime import datetime
 from fastapi import APIRouter, UploadFile, File, HTTPException, Query, Body, Depends
 from app.services.documents import create_document_record
+from app.services.gcp import upload_to_gcp
 from app.services.zerox_service import process_file_with_zerox
 import os
 from pathlib import Path
@@ -14,6 +15,7 @@ UPLOAD_DIR = "uploads"  # Directory to store uploaded files
 OUTPUT_DIR = "output"   # Directory to save processed markdown
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+GCP_BUCKET_NAME = os.getenv("GCP_BUCKET_NAME")
 
 @router.post("/")
 async def process_uploaded_file_via_zerox(
@@ -37,6 +39,8 @@ async def process_uploaded_file_via_zerox(
         raise HTTPException(status_code=500, detail=f"Failed to save uploaded file: {e}")
 
     try:
+        
+        gcp_file_url = upload_to_gcp(GCP_BUCKET_NAME, file_path, 'matrix-documents', file.filename)
         # Process the file with Zerox
         result = await process_file_with_zerox(
             file_path=file_path,
@@ -49,7 +53,7 @@ async def process_uploaded_file_via_zerox(
             for page in result.pages
         ])
         final_result = await call_model_with_prompt(result.pages,columnDefs)
-        document_id = await create_document_record(file.filename, datetime.now(), final_result, structure_as_json, user, db)
+        document_id = await create_document_record(file.filename, datetime.now(), final_result, structure_as_json, user, db, gcp_file_url)
         
         return {"message": "File processed successfully", "result": final_result, "document_id": document_id}
     except RuntimeError as e:

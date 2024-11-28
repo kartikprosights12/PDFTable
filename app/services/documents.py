@@ -11,7 +11,8 @@ async def create_document_record(
     properties: dict,
     structure: str,
     user: str,
-    db: AsyncSession
+    db: AsyncSession,
+    gcp_file_url: str
 ):
     """
     Create a document record in the database.
@@ -34,7 +35,7 @@ async def create_document_record(
         user_record = find_user_query.scalars().first()
 
         if not user_record:
-            raise ValueError(f"User with email {user} not found")
+            return None
         # Create a new document record
         new_document = DocumentModel(
             id=document_id,
@@ -43,7 +44,8 @@ async def create_document_record(
             properties=properties,
             structure=structure,
             updated_at=datetime.utcnow(),
-            user=user,
+            user=user_record.id,
+            file_url=gcp_file_url
         )
 
         # Add to the database

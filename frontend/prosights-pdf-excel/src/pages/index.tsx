@@ -3,7 +3,7 @@ import { Provider } from "react-redux";
 import store from "../redux/Store";
 import UploadContainer from "../features/upload/container";
 import AuthGuard from "@/components/AuthGuard";
-import LogoutButton from "@/components/Logout";
+// import LogoutButton from "@/components/Logout";
 
 const Home: React.FC = () => (
   <Provider store={store}>
@@ -11,7 +11,7 @@ const Home: React.FC = () => (
       <main className="p-6 flex flex-col items-center">
         <AuthGuard>
           <UploadContainer />
-          <LogoutButton />
+          {/* <LogoutButton /> */}
         </AuthGuard>
       </main>
     </div>

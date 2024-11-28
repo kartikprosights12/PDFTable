@@ -5,9 +5,10 @@ const LogoutButton: React.FC = () => {
 
   return (
     <button
-      onClick={() =>
-        logout({ returnTo: process.env.NEXT_PUBLIC_AUTH0_REDIRECT_URI })
-      }
+      onClick={() => {
+        logout();
+        window.location.href = process.env.NEXT_PUBLIC_AUTH0_REDIRECT_URI || '';
+      }}
       className="bg-red-500 text-white px-4 py-2 rounded-md"
     >
       Logout

@@ -68,3 +68,38 @@ async def call_model_with_prompt(content: str, columnDefs: str, max_tokens: int 
         return {"message": "Successfully parsed JSON", "data": parsed_data}
     except Exception as e:
         raise RuntimeError(f"Failed to call Anthropic: {e}")
+
+
+async def find_columns_from_prompt(query: str, max_tokens: int = 4096):
+    
+    try:
+        prompt = (
+            f"Given the user’s input text describing the contents of a document, suggest a list of relevant column names for a table that could be used to extract specific data from the attached document. "
+            f"For example, if the document is related to financial data, suggest columns like 'EBITDA,' 'Revenue,' 'Profit,' 'Net Income,' etc. "
+            f"The column names should be based on key terms and metrics mentioned in the user's input. "
+            f"If the document relates to a different domain, such as marketing or HR, suggest relevant columns like 'Customer Acquisition Cost,' 'Employee Salary,' 'Lead Conversion Rate,' etc. "
+            f"Make sure the suggestions are tailored to the specific domain and context provided in the input. "
+            f"The response should be a JSON with column names and limit the number of columns to 10 max. "
+            f"Here is the user's input: {query}"
+        )        
+        print("prompt: \n\n  ", prompt)
+        messages = [{"role": "user", "content": prompt}]
+        print("messages: \n\n  ", messages)
+        model = settings.ZEROX_MODEL
+        provider = settings.ZEROX_PROVIDER
+        # Use the Completion class from litellm to call the API
+        response = completion(
+            model=f"{provider}/{model}",
+            messages=messages,
+            max_tokens=max_tokens
+        )
+        print("response from litellm: \n\n  ", response)
+        raw_content = response["choices"][0]["message"]["content"]
+        json_match = re.search(r"```json\n(.*?)\n```", raw_content, re.DOTALL)
+        if not json_match:
+            raise RuntimeError(f"Failed to find JSON in response. Full response:\n{raw_content}")
+        
+        json_content = json_match.group(1)
+        return {"message": "Successfully parsed JSON", "data": json_content}
+    except Exception as e:
+        raise RuntimeError(f"Failed to call model: {e}")

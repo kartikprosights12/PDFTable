@@ -1,6 +1,7 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi import APIRouter, File, Query, UploadFile, HTTPException
 import os
 from app.services.file_service import save_file, list_files_metadata
+from app.services.litellm import find_columns_from_prompt
 
 router = APIRouter()
 
@@ -20,3 +21,8 @@ async def upload_file(file: UploadFile = File(...)):
 def list_files():
     """Endpoint to list all uploaded files."""
     return list_files_metadata(UPLOAD_DIR)
+
+@router.get("/columns")
+async def find_columns(query: str = Query(None, description="Search query for columns")):
+    """Endpoint to list column names based on the query."""
+    return await find_columns_from_prompt(query)  # Use `await` to resolve the coroutine

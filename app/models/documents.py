@@ -1,6 +1,7 @@
 from sqlalchemy import Column, String, JSON, Text, Date, TIMESTAMP
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
+from sqlalchemy.dialects.postgresql import UUID
 
 Base = declarative_base()
 
@@ -13,4 +14,5 @@ class Document(Base):
     properties = Column(JSON, nullable=True)
     structure = Column(Text, nullable=True)
     updated_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)
-    user = Column(String, nullable=False)
+    user = Column(UUID(as_uuid=True), nullable=False)
+    file_url = Column(String, nullable=True)

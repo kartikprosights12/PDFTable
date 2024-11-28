@@ -7,17 +7,27 @@ import "ag-grid-community/styles/ag-theme-alpine.css";
 import { RootState } from "@/redux/Store";
 import ButtonComponent from "../../components/buttonComponent";
 import { v4 as uuidv4 } from "uuid";
-import { PiColumnsPlusRightFill } from "react-icons/pi";
-import { LuUpload } from "react-icons/lu";
 import LabelWithIcon from "@/components/labelComponent";
+import { PiUploadFill, PiExportFill, PiColumnsPlusRightFill } from "react-icons/pi";
+import './styles.css';
 
 const UploadContainer: React.FC = () => {
   const dispatch = useDispatch();
 
-  const userId = useSelector((state: RootState) => state.user.userId) || localStorage.getItem('userEmail');
-  console.log('userId ----', userId);
+  const userId =
+    useSelector((state: RootState) => state.user.userId) ||
+    localStorage.getItem("userEmail");
+  console.log("userId ----", userId);
   // Redux state
   const uploads = useSelector((state: RootState) => state.upload.uploads);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newColumnName, setNewColumnName] = useState("");
+  const [gridApi, setGridApi] = useState<any>(null);
+  const [searchText, setSearchText] = useState("");
+  const [loading, setLoading] = useState(false); // State to manage loading
+
+
 
   // Local state
   const [rowData, setRowData] = useState<any[]>([]);
@@ -44,31 +54,15 @@ const UploadContainer: React.FC = () => {
     { headerName: "Gross Profit", field: "grossProfit", flex: 1 },
     { headerName: "EBITDA", field: "ebitda", flex: 1 },
     { headerName: "Capex", field: "capex", flex: 1 },
-    
   ]);
 
-  // const columnDefs = [
-  //   { headerName: "Document", field: "document", flex: 1 },
-  //   { headerName: "Date", field: "date", flex: 1 },
-  //   { headerName: "Document Type", field: "type", flex: 1 },
-  //   { headerName: "Company Name", field: "companyName", flex: 1 },
-  //   { headerName: "Company Description", field: "companyDescription", flex: 1 },
-  //   { headerName: "Company Business Model", field: "companyBusinessModel", flex: 1 },
-  //   { headerName: "Company Industry", field: "companyIndustry", flex: 1 },
-  //   { headerName: "List of Management Team", field: "listOfManagementTeam", flex: 1 },
-  //   { headerName: "Revenue", field: "revenue", flex: 1 },
-  //   { headerName: "Revenue Growth", field: "revenueGrowth", flex: 1 },
-  //   { headerName: "Gross Profit", field: "grossProfit", flex: 1 },
-  //   { headerName: "EBITDA", field: "ebitda", flex: 1 },
-  //   { headerName: "Capex", field: "capex", flex: 1 },
-  // ];
 
   useEffect(() => {
     if (uploads && uploads.length > 0) {
       const updatedRows = uploads.map((upload) => {
         // Create a placeholder row dynamically based on columnDefs
         const placeholderRow: { [key: string]: any } = {};
-        console.log('upload', upload);
+        console.log("upload", upload);
 
         columnDefs.forEach((colDef) => {
           const field = colDef.field;
@@ -104,35 +98,108 @@ const UploadContainer: React.FC = () => {
           file,
           fields,
           columnDefs,
-          userId: userId || ""
+          userId: userId || "",
         })
       );
     });
   };
 
-  const handleAddColumn = () => {
-    const newColumnName = prompt("Enter the name of the new column:");
-    if (newColumnName) {
-      const newColumnField = newColumnName.toLowerCase().replace(/ /g, "_"); // Convert to a valid field name
-      setColumnDefs((prev) => [
-        ...prev,
-        {
-          headerName: newColumnName,
-          field: newColumnField,
-          flex: 1,
-        },
-      ]);
+  const handleAddColumn = () => setIsModalOpen(true);
 
-      // Update all rows with an empty value for the new column
-      setRowData((prev) =>
-        prev.map((row) => ({
-          ...row,
-          [newColumnField]: "",
-        }))
-      );
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setNewColumnName("");
+  };
+
+  const handleModalSubmit = () => {
+    if (!newColumnName.trim()) {
+      alert("Column name cannot be empty!");
+      return;
+    }
+
+    const newColumnField = newColumnName.toLowerCase().replace(/ /g, "_"); // Convert to a valid field name
+
+    const newColumnDef = {
+      headerName: newColumnName,
+      field: newColumnField,
+      flex: 1,
+    };
+    setColumnDefs((prev) => [...prev, newColumnDef]);
+
+    // Update all rows with an empty value for the new column
+    uploads.forEach((upload) => {
+      if (upload.results[0][newColumnField] !== undefined) {
+        setRowData((prev) =>
+          prev.map((row) =>
+            row.document === upload.file.name
+              ? { ...row, [newColumnField]: upload.results[0][newColumnField] || "Reading..." }
+              : row
+          )
+        );
+      }
+    });
+
+   // Dispatch an update for existing documents with the new column
+   uploads.forEach((upload) => {
+    dispatch(
+      startUpload({
+        id: upload.id,
+        file: upload.file, // Use existing file
+        columnDefs: [...columnDefs, newColumnDef], // Add the new column definition
+        fields: [newColumnField], // Pass only the new field
+        userId: userId || "",
+      })
+    );
+  });
+
+    handleModalClose();
+  };
+
+  const onGridReady = (params: any) => {
+    setGridApi(params.api);
+  };
+
+  const handleExportToCsv = () => {
+    if (gridApi) {
+      gridApi.exportDataAsCsv();
     }
   };
 
+  const handleSearch = async (text: string) => {
+    if (!text.trim()) return;
+    setLoading(true); // Start the loader
+    try {
+      // Call the API with the search text
+      const response = await fetch(
+        `http://localhost:8000/api/v1/files/columns?query=${encodeURIComponent(text)}`
+      );
+      const data = await response.json();
+      let parsedData = data.data;
+      if (typeof data.data === "string") {
+        parsedData = JSON.parse(data.data);
+      }
+      if (parsedData?.columns && Array.isArray(parsedData?.columns)) {
+        // Update columnDefs based on API response
+        
+        const updatedColumns = parsedData.columns.map((col: string) => ({
+          headerName: col,
+          field: col.toLowerCase().replace(/ /g, "_"),
+          flex: 1,
+        }));
+        const presetColumns = [
+          { headerName: "Document", field: "document", flex: 1 },
+          { headerName: "Date", field: "date", flex: 1 },
+          { headerName: "Document Type", field: "documentType", flex: 1 },
+        ];
+
+        setColumnDefs([...presetColumns, ...updatedColumns]);
+      }
+    } catch (error) {
+      console.error("Error fetching search results:", error);
+    } finally {
+      setLoading(false); // Stop the loader
+    } 
+  };
   return (
     <div className="bg-gray-100 w-full p-6">
       <div className="flex justify-between items-center mb-4">
@@ -173,11 +240,25 @@ const UploadContainer: React.FC = () => {
           </svg>
         </div>
 
+        <div className="flex flex-grow items-center mx-4">
+          <input
+            type="text"
+            placeholder="Insert prompt here to update the table for relevant columns..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSearch(searchText); // Call API on Enter key press
+            }}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+         
+        </div>
+
         {/* Buttons on the right side */}
         <div className="flex space-x-4 items-center">
           <LabelWithIcon
             htmlFor="file-upload"
-            icon={<LuUpload />}
+            icon={<PiUploadFill />}
             label="Add Documents"
           />
           <ButtonComponent
@@ -185,12 +266,20 @@ const UploadContainer: React.FC = () => {
             icon={<PiColumnsPlusRightFill />}
             onClick={handleAddColumn}
           />
+          {(
+            <ButtonComponent
+              label="Export to CSV"
+              icon={<PiExportFill />}
+              onClick={handleExportToCsv}
+            />
+          )}
         </div>
 
         {/* File Upload Input (hidden) */}
         <input
           id="file-upload"
           type="file"
+          title="Upload your files"
           multiple
           onChange={handleFileChange}
           className="hidden"
@@ -199,17 +288,60 @@ const UploadContainer: React.FC = () => {
 
       {/* AG Grid Container */}
       <div
-        className="ag-theme-alpine mt-8"
-        style={{ height: 200, width: "100%", backgroundColor: "white" }}
+        className="ag-theme-alpine mt-8 ag-grid-container"
       >
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80 z-10">
+            <div className="loader border-t-4 border-b-4 border-blue-500 rounded-full w-12 h-12 animate-spin"></div>
+          </div>
+        )}
         <AgGridReact
           rowData={rowData}
           columnDefs={columnDefs}
           domLayout="autoHeight"
           pagination={true}
-          paginationPageSize={10}
+          paginationPageSize={20}
+          onGridReady={onGridReady}
         />
       </div>
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full">
+            <div className="p-6">
+              <h2 className="text-lg font-bold mb-2">Add Column</h2>
+              <p className="text-gray-600 mb-4">
+                Enter the name for the new column you would like to add.
+              </p>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Column Name
+                </label>
+                <input
+                  type="text"
+                  value={newColumnName}
+                  onChange={(e) => setNewColumnName(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter column name"
+                />
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  className="px-4 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200"
+                  onClick={handleModalClose}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-black text-white rounded-lg shadow-lg hover:bg-gray-800 active:scale-95"
+                  onClick={handleModalSubmit}
+                >
+                  Add Column
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
