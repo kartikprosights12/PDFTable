@@ -1,6 +1,6 @@
 import { takeEvery, call, put } from "redux-saga/effects";
-import { startUpload, uploadSuccess, uploadFailure } from "./reducer";
-import { uploadPDF } from "../../utils/api";
+import { startUpload, uploadSuccess, uploadFailure, updateDocumentId } from "./reducer";
+import { uploadPDF } from "../../features/upload/api";
 
 function* handleUpload(action: {
   type: string;
@@ -9,7 +9,7 @@ function* handleUpload(action: {
   const { id, file, fields, columnDefs, userId } = action.payload;
   console.log("handleUpload", userId);
   try {
-    const response: { result: { data: [] } } = yield call(
+    const response: { document_id: string; result: { data: [] } } = yield call(
       uploadPDF,
       file,
       fields,
@@ -18,6 +18,9 @@ function* handleUpload(action: {
     );
     const results = response.result?.data || [];
     yield put(uploadSuccess({ id, results }));
+    if (response.document_id) {
+        yield put(updateDocumentId({ tempId: id, documentId: response.document_id }));
+      }
   } catch (error: any) {
     console.error(error);
     yield put(uploadFailure({ id, error: error.message }));

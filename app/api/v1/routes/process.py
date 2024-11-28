@@ -1,14 +1,16 @@
 from datetime import datetime
 from fastapi import APIRouter, UploadFile, File, HTTPException, Query, Body, Depends
+from sqlalchemy import select
 from app.services.documents import create_document_record
 from app.services.gcp import upload_to_gcp
 from app.services.zerox_service import process_file_with_zerox
 import os
-from pathlib import Path
 from app.services.litellm import call_model_with_prompt
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 import json
+from app.models.documents import Document
+
 router = APIRouter()
 
 UPLOAD_DIR = "uploads"  # Directory to store uploaded files
@@ -17,7 +19,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 GCP_BUCKET_NAME = os.getenv("GCP_BUCKET_NAME")
 
-@router.post("/")
+@router.post("")
 async def process_uploaded_file_via_zerox(
     file: UploadFile = File(..., description="File to upload and process"),
     select_pages: list[int] = Query(None, description="List of pages to process (1-indexed)"),
@@ -62,3 +64,55 @@ async def process_uploaded_file_via_zerox(
         # Clean up the uploaded file
         if os.path.exists(file_path):
             os.remove(file_path)
+
+
+@router.post("/update")
+async def update_document_data(
+    payload: dict = Body(..., description="Payload containing document ID and new columns"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Update document data with new columns using document structure and AI model.
+
+    Args:
+        payload (dict): JSON payload containing `documentId` and `newColumns`.
+        db (AsyncSession): Database session.
+
+    Returns:
+        dict: Updated document data for new columns.
+    """
+    try:
+        # Extract input values from payload
+        document_id = payload.get("documentId")
+        new_columns = payload.get("newColumns")
+
+        if not document_id or not new_columns:
+            raise HTTPException(status_code=400, detail="Document ID and new columns are required.")
+
+        # Fetch the document from the database
+        query = await db.execute(select(Document).where(Document.id == document_id))
+        document = query.scalars().first()
+
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found.")
+
+        # Get the document structure from the database
+        document_structure = json.loads(document.structure)  # Ensure the structure is deserialized
+
+        # Prepare column definitions for the model
+        column_defs = json.dumps(new_columns)
+
+        # Call the model with document structure and new columns
+        updated_data = await call_model_with_prompt(document_structure, column_defs)
+
+        # Return the updated data
+        return {
+            "message": "Document updated successfully",
+            "document_id": document_id,
+            "result": updated_data,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update document: {str(e)}")

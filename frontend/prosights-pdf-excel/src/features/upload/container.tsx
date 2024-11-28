@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { startUpload } from "./reducer";
+import { startUpload, uploadSuccess } from "./reducer";
 import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
@@ -62,10 +62,9 @@ const UploadContainer: React.FC = () => {
       const updatedRows = uploads.map((upload) => {
         // Create a placeholder row dynamically based on columnDefs
         const placeholderRow: { [key: string]: any } = {};
-        console.log("upload", upload);
 
         columnDefs.forEach((colDef) => {
-          const field = colDef.field;
+          const field = colDef.field; //quantity
           placeholderRow[field] = upload.loading
             ? "Reading..."
             : upload.results[0]?.[field] || "N/A"; // Use results if available, otherwise "N/A"
@@ -101,6 +100,7 @@ const UploadContainer: React.FC = () => {
           userId: userId || "",
         })
       );
+      
     });
   };
 
@@ -111,19 +111,20 @@ const UploadContainer: React.FC = () => {
     setNewColumnName("");
   };
 
-  const handleModalSubmit = () => {
+  const handleModalSubmit = async () => {
     if (!newColumnName.trim()) {
       alert("Column name cannot be empty!");
       return;
     }
-
+  
     const newColumnField = newColumnName.toLowerCase().replace(/ /g, "_"); // Convert to a valid field name
-
+  
     const newColumnDef = {
       headerName: newColumnName,
       field: newColumnField,
       flex: 1,
     };
+  
     setColumnDefs((prev) => [...prev, newColumnDef]);
 
     // Update all rows with an empty value for the new column
@@ -154,7 +155,7 @@ const UploadContainer: React.FC = () => {
 
     handleModalClose();
   };
-
+  
   const onGridReady = (params: any) => {
     setGridApi(params.api);
   };
@@ -164,42 +165,78 @@ const UploadContainer: React.FC = () => {
       gridApi.exportDataAsCsv();
     }
   };
-
   const handleSearch = async (text: string) => {
     if (!text.trim()) return;
+  
     setLoading(true); // Start the loader
     try {
-      // Call the API with the search text
+      // Step 1: Fetch the new columns based on the search query
       const response = await fetch(
-        urls.apiBaseUrl+`/api/v1/files/columns?query=${encodeURIComponent(text)}`
+        `${urls.apiBaseUrl}/api/v1/files/columns?query=${encodeURIComponent(text)}`
       );
       const data = await response.json();
+  
       let parsedData = data.data;
       if (typeof data.data === "string") {
         parsedData = JSON.parse(data.data);
       }
+  
       if (parsedData?.columns && Array.isArray(parsedData?.columns)) {
-        // Update columnDefs based on API response
-        
         const updatedColumns = parsedData.columns.map((col: string) => ({
           headerName: col,
           field: col.toLowerCase().replace(/ /g, "_"),
           flex: 1,
         }));
+  
+        // Add preset columns (if needed)
         const presetColumns = [
           { headerName: "Document", field: "document", flex: 1 },
           { headerName: "Date", field: "date", flex: 1 },
           { headerName: "Document Type", field: "documentType", flex: 1 },
         ];
-
+  
+        // Step 2: Update columnDefs with the new columns
         setColumnDefs([...presetColumns, ...updatedColumns]);
+  
+        // Step 3: Trigger updates for each uploaded document
+        const updatePromises = uploads.map(async (upload) => {
+          const documentId = upload.id; // Assuming `id` is the document ID
+          const updateResponse = await fetch(`${urls.apiBaseUrl}/api/v1/process/update`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              documentId: upload.documentId,
+              newColumns: parsedData.columns, // Pass the new columns
+            }),
+          });
+  
+          if (!updateResponse.ok) {
+            throw new Error(`Failed to update document: ${documentId}`);
+          }
+  
+          const updateData = await updateResponse.json();
+          // Update Redux state for the specific upload
+          dispatch(
+            uploadSuccess({
+              id: upload.id,
+              results: updateData.result.data, // Align with API response structure
+            })
+          );
+        });
+  
+        // Wait for all update requests to complete
+        await Promise.all(updatePromises);
       }
     } catch (error) {
-      console.error("Error fetching search results:", error);
+      console.error("Error updating columns:", error);
+      alert("Failed to update columns. Please try again.");
     } finally {
       setLoading(false); // Stop the loader
-    } 
+    }
   };
+  
   return (
     <div className="bg-gray-100 w-full p-6">
       <div className="flex justify-between items-center mb-4">
