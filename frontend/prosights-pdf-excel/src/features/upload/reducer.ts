@@ -9,6 +9,7 @@ interface UploadState {
     error?: string; // Error message if the upload fails
     columnDefs: any;
     userId: string;
+    documentId?: string;
   }[];
 }
 
