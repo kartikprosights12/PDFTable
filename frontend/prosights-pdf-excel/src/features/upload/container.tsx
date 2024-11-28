@@ -36,21 +36,10 @@ const UploadContainer: React.FC = () => {
     { headerName: "Document", field: "document", flex: 1 },
     { headerName: "Date", field: "date", flex: 1 },
     { headerName: "Document Type", field: "type", flex: 1 },
-    { headerName: "Company Name", field: "companyName", flex: 1 },
-    { headerName: "Company Description", field: "companyDescription", flex: 1 },
-    {
-      headerName: "Company Business Model",
-      field: "companyBusinessModel",
-      flex: 1,
-    },
+    { headerName: "Company Name", field: "companyName", flex: 1 },   
     { headerName: "Company Industry", field: "companyIndustry", flex: 1 },
-    {
-      headerName: "List of Management Team",
-      field: "listOfManagementTeam",
-      flex: 1,
-    },
+   
     { headerName: "Revenue", field: "revenue", flex: 1 },
-    { headerName: "Revenue Growth", field: "revenueGrowth", flex: 1 },
     { headerName: "Gross Profit", field: "grossProfit", flex: 1 },
     { headerName: "EBITDA", field: "ebitda", flex: 1 },
     { headerName: "Capex", field: "capex", flex: 1 },
