@@ -19,7 +19,7 @@ class User(BaseModel):
     sub: str
 
 
-@router.post("/")
+@router.post("")
 async def create_user(
     user: User = Body(..., description="User object from the frontend"),
     db: AsyncSession = Depends(get_db)
