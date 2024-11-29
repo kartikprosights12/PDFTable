@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 origins = [
-    "https://matrix.prosights.co",  # Add your specific domain
+    "https://prism.prosights.co",  # Add your specific domain
     "http://localhost:3000",       # For local development
 ]
 

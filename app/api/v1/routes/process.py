@@ -40,7 +40,7 @@ async def process_uploaded_file_via_zerox(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save uploaded file: {e}")
     
-    gcp_file_url = upload_to_gcp(GCP_BUCKET_NAME, file_path, 'matrix-documents', file.filename)
+    gcp_file_url = upload_to_gcp(GCP_BUCKET_NAME, file_path, 'prism-documents', file.filename)
 
     try:
 

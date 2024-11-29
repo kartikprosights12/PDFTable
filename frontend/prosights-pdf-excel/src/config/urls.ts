@@ -9,13 +9,13 @@ const local: EnvUrls = {
 };
 
 const development: EnvUrls = {
-  apiBaseUrl: "https://matrix-api.prosights.co",
-  frontendUrl: "https://matrix.prosights.co",
+  apiBaseUrl: "https://prism-api.prosights.co",
+  frontendUrl: "https://prism.prosights.co",
 };
 
 const production: EnvUrls = {
-  apiBaseUrl: "https://matrix-api.prosights.co",
-  frontendUrl: "https://matrix.prosights.co",
+  apiBaseUrl: "https://prism-api.prosights.co",
+  frontendUrl: "https://prism.prosights.co",
 };
 
 const config: Record<string, EnvUrls> = {
