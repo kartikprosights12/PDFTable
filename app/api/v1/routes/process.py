@@ -76,7 +76,7 @@ async def process_uploaded_file_via_zerox(
         final_result = await call_model_with_prompt(result.pages,columnDefs)
         document_id = await create_document_record(file.filename, datetime.now(), final_result, structure_as_json, user, db, gcp_file_url, file_hash)
         
-        return {"message": "File processed successfully", "result": final_result, "document_id": document_id}
+        return {"message": "File processed successfully", "result": final_result, "document_id": document_id, "document_url": gcp_file_url }
         
         # Process the file with Zerox
        
