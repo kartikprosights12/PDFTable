@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { startUpload, uploadSuccess } from "./reducer";
 import { AgGridReact } from "ag-grid-react";
@@ -8,12 +8,22 @@ import { RootState } from "@/redux/Store";
 import ButtonComponent from "../../components/buttonComponent";
 import { v4 as uuidv4 } from "uuid";
 import LabelWithIcon from "@/components/labelComponent";
-import { PiUploadFill, PiExportFill, PiColumnsPlusRightFill } from "react-icons/pi";
+import {
+  PiUploadFill,
+  PiExportFill,
+  PiColumnsPlusRightFill,
+} from "react-icons/pi";
 import { urls } from "@/config/urls";
+import CustomTooltip from "../../components/CustomTooltip"; // Import custom tooltip component
+import { ColDef } from "ag-grid-community";
+
+// Define an interface for the expected structure of results
+interface UploadResults {
+  [key: string]: any; // Adjust the type as necessary
+}
 
 const UploadContainer: React.FC = () => {
   const dispatch = useDispatch();
-
   const userId =
     useSelector((state: RootState) => state.user.userId) ||
     localStorage.getItem("userEmail");
@@ -27,24 +37,58 @@ const UploadContainer: React.FC = () => {
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(false); // State to manage loading
 
-
-
   // Local state
   const [rowData, setRowData] = useState<any[]>([]);
   const [fields] = useState<string[]>([""]); // Fields state
-  const [columnDefs, setColumnDefs] = useState<any[]>([
-    { headerName: "Document", field: "document", flex: 1 },
-    { headerName: "Date", field: "date", flex: 1 },
-    { headerName: "Document Type", field: "type", flex: 1 },
-    { headerName: "Company Name", field: "companyName", flex: 1 },   
-    { headerName: "Company Industry", field: "companyIndustry", flex: 1 },
-   
-    { headerName: "Revenue", field: "revenue", flex: 1 },
-    { headerName: "Gross Profit", field: "grossProfit", flex: 1 },
-    { headerName: "EBITDA", field: "ebitda", flex: 1 },
-    { headerName: "Capex", field: "capex", flex: 1 },
+  const [columnDefs, setColumnDefs] = useState<ColDef[]>([
+    {
+      headerName: "Document",
+      field: "document",
+      tooltipComponentParams: { link: "https://example.com/document" },
+    },
+    {
+      headerName: "Date",
+      field: "date",
+      tooltipField: "date",
+      tooltipComponentParams: { link: "https://example.com/document" },
+    },
+    {
+      headerName: "Company Name",
+      field: "companyName",
+      tooltipField: "companyName",
+      tooltipComponentParams: { link: "https://example.com/document" },
+    },
+    {
+      headerName: "Company Industry",
+      field: "companyIndustry",
+      tooltipField: "companyIndustry",
+      tooltipComponentParams: { link: "https://example.com/document" },
+    },
+    {
+      headerName: "Revenue",
+      field: "revenue",
+      tooltipField: "revenue",
+      tooltipComponentParams: { link: "https://example.com/document" },
+    },
+    {
+      headerName: "Gross Profit",
+      field: "grossProfit",
+      tooltipField: "grossProfit",
+      tooltipComponentParams: { link: "https://example.com/document" },
+    },
+    {
+      headerName: "EBITDA",
+      field: "ebitda",
+      tooltipField: "ebitda",
+      tooltipComponentParams: { link: "https://example.com/document" },
+    },
+    {
+      headerName: "Capex",
+      field: "capex",
+      tooltipField: "capex",
+      tooltipComponentParams: { link: "https://example.com/document" },
+    },
   ]);
-
 
   useEffect(() => {
     if (uploads && uploads.length > 0) {
@@ -54,14 +98,19 @@ const UploadContainer: React.FC = () => {
 
         columnDefs.forEach((colDef) => {
           const field = colDef.field; //quantity
-          placeholderRow[field] = upload.loading
-            ? "Reading..."
-            : upload.results[0]?.[field] || "N/A"; // Use results if available, otherwise "N/A"
+          if (field) {
+            // Ensure field is defined
+            placeholderRow[field] = upload.loading
+              ? "Reading..."
+              : (upload.results as UploadResults)[field] || "N/A"; // Cast results to UploadResults
+          }
         });
 
         // Add static fields for document and date
         placeholderRow.document = upload.file.name;
         placeholderRow.date = new Date().toLocaleDateString();
+        placeholderRow.pageNumber = 2;
+        placeholderRow.tooltip = `Fetched from Page 2`;
 
         return placeholderRow;
       });
@@ -89,7 +138,6 @@ const UploadContainer: React.FC = () => {
           userId: userId || "",
         })
       );
-      
     });
   };
 
@@ -105,46 +153,51 @@ const UploadContainer: React.FC = () => {
       alert("Column name cannot be empty!");
       return;
     }
-  
+
     const newColumnField = newColumnName.toLowerCase().replace(/ /g, "_"); // Convert to a valid field name
-  
+
     const newColumnDef = {
       headerName: newColumnName,
       field: newColumnField,
       flex: 1,
+      tooltipField: newColumnField,
+      tooltipComponentParams: { link: "https://example.com/document" },
     };
-  
+
     setColumnDefs((prev) => [...prev, newColumnDef]);
 
     // Update all rows with an empty value for the new column
     uploads.forEach((upload) => {
-      if (upload.results[0][newColumnField] !== undefined) {
+      if (upload.results && newColumnField in upload.results) {
         setRowData((prev) =>
           prev.map((row) =>
             row.document === upload.file.name
-              ? { ...row, [newColumnField]: upload.results[0][newColumnField] || "Reading..." }
+              ? {
+                  ...row,
+                  [newColumnField]: (upload.results as UploadResults)[newColumnField] || "Reading...",
+                }
               : row
           )
         );
       }
     });
 
-   // Dispatch an update for existing documents with the new column
-   uploads.forEach((upload) => {
-    dispatch(
-      startUpload({
-        id: upload.id,
-        file: upload.file, // Use existing file
-        columnDefs: [...columnDefs, newColumnDef], // Add the new column definition
-        fields: [newColumnField], // Pass only the new field
-        userId: userId || "",
-      })
-    );
-  });
+    // Dispatch an update for existing documents with the new column
+    uploads.forEach((upload) => {
+      dispatch(
+        startUpload({
+          id: upload.id,
+          file: upload.file, // Use existing file
+          columnDefs: [...columnDefs, newColumnDef], // Add the new column definition
+          fields: [newColumnField], // Pass only the new field
+          userId: userId || "",
+        })
+      );
+    });
 
     handleModalClose();
   };
-  
+
   const onGridReady = (params: any) => {
     setGridApi(params.api);
   };
@@ -156,55 +209,62 @@ const UploadContainer: React.FC = () => {
   };
   const handleSearch = async (text: string) => {
     if (!text.trim()) return;
-  
+
     setLoading(true); // Start the loader
     try {
       // Step 1: Fetch the new columns based on the search query
       const response = await fetch(
-        `${urls.apiBaseUrl}/api/v1/files/columns?query=${encodeURIComponent(text)}`
+        `${urls.apiBaseUrl}/api/v1/files/columns?query=${encodeURIComponent(
+          text
+        )}`
       );
       const data = await response.json();
-  
+
       let parsedData = data.data;
       if (typeof data.data === "string") {
         parsedData = JSON.parse(data.data);
       }
-  
+
       if (parsedData?.columns && Array.isArray(parsedData?.columns)) {
         const updatedColumns = parsedData.columns.map((col: string) => ({
           headerName: col,
           field: col.toLowerCase().replace(/ /g, "_"),
           flex: 1,
+          tooltipField: col.toLowerCase().replace(/ /g, "_"), 
+          tooltipComponentParams: { link: "https://example.com/document" }
         }));
-  
+
         // Add preset columns (if needed)
         const presetColumns = [
-          { headerName: "Document", field: "document", flex: 1 },
-          { headerName: "Date", field: "date", flex: 1 },
-          { headerName: "Document Type", field: "documentType", flex: 1 },
+          { headerName: "Document", field: "document", flex: 1, tooltipField: "document", tooltipComponentParams: { link: "https://example.com/document" } },
+          { headerName: "Date", field: "date", flex: 1, tooltipField: "date", tooltipComponentParams: { link: "https://example.com/document" }, },
+          
         ];
-  
+
         // Step 2: Update columnDefs with the new columns
         setColumnDefs([...presetColumns, ...updatedColumns]);
-  
+
         // Step 3: Trigger updates for each uploaded document
         const updatePromises = uploads.map(async (upload) => {
           const documentId = upload.id; // Assuming `id` is the document ID
-          const updateResponse = await fetch(`${urls.apiBaseUrl}/api/v1/process/update`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              documentId: upload.documentId,
-              newColumns: parsedData.columns, // Pass the new columns
-            }),
-          });
-  
+          const updateResponse = await fetch(
+            `${urls.apiBaseUrl}/api/v1/process/update`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                documentId: upload.documentId,
+                newColumns: parsedData.columns, // Pass the new columns
+              }),
+            }
+          );
+
           if (!updateResponse.ok) {
             throw new Error(`Failed to update document: ${documentId}`);
           }
-  
+
           const updateData = await updateResponse.json();
           // Update Redux state for the specific upload
           dispatch(
@@ -214,7 +274,7 @@ const UploadContainer: React.FC = () => {
             })
           );
         });
-  
+
         // Wait for all update requests to complete
         await Promise.all(updatePromises);
       }
@@ -225,7 +285,15 @@ const UploadContainer: React.FC = () => {
       setLoading(false); // Stop the loader
     }
   };
-  
+
+  const defaultColDef = useMemo<ColDef>(() => {
+    return {
+      flex: 1,
+      minWidth: 100,
+      tooltipComponent: CustomTooltip,
+    };
+  }, []);
+
   return (
     <div className="bg-gray-100 w-full p-6">
       <div className="flex justify-between items-center mb-4">
@@ -277,7 +345,6 @@ const UploadContainer: React.FC = () => {
             }}
             className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500"
           />
-         
         </div>
 
         {/* Buttons on the right side */}
@@ -292,13 +359,13 @@ const UploadContainer: React.FC = () => {
             icon={<PiColumnsPlusRightFill />}
             onClick={handleAddColumn}
           />
-          {(
+          {
             <ButtonComponent
               label="Export to CSV"
               icon={<PiExportFill />}
               onClick={handleExportToCsv}
             />
-          )}
+          }
         </div>
 
         {/* File Upload Input (hidden) */}
@@ -313,9 +380,7 @@ const UploadContainer: React.FC = () => {
       </div>
 
       {/* AG Grid Container */}
-      <div
-        className="ag-theme-alpine mt-8 ag-grid-container"
-      >
+      <div className="ag-theme-alpine mt-8 ag-grid-container">
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80 z-10">
             <div className="loader border-t-4 border-b-4 border-blue-500 rounded-full w-12 h-12 animate-spin"></div>
@@ -323,11 +388,16 @@ const UploadContainer: React.FC = () => {
         )}
         <AgGridReact
           rowData={rowData}
+          defaultColDef={defaultColDef}
           columnDefs={columnDefs}
           domLayout="autoHeight"
           pagination={true}
           paginationPageSize={20}
           onGridReady={onGridReady}
+          tooltipShowDelay={500}
+          enableCellTextSelection={true}
+          ensureDomOrder={true}
+          tooltipInteraction={true}
         />
       </div>
       {isModalOpen && (

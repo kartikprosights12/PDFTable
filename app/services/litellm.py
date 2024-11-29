@@ -10,7 +10,6 @@ async def call_model_with_prompt(content: str, columnDefs: str, max_tokens: int 
         if not columnDefs:
             columnDefs = """{ headerName: "Document Name", field: "documentName" },
     { headerName: "Date", field: "Date" },
-    { headerName: "Document Type", field: "documentType", desc: "Type of this document is like product, financial report, hr report" },
     { headerName: "Company Name", field: "companyName" },
     { headerName: "Company Description", field: "companyDescription" },
     { headerName: "Company Business Model", field: "companyBusinessModel" },
@@ -21,18 +20,18 @@ async def call_model_with_prompt(content: str, columnDefs: str, max_tokens: int 
     { headerName: "Gross Profit", field: "grossProfit" },
     { headerName: "EBITDA", field: "ebitda" },
     { headerName: "Capex", field: "capex" }"""
+            
+
         # Example format to guide the model
         format = """[
           { "name": "John Doe", "education": "MIT", "experience": "Google", ... }
         ]"""        
         prompt = (
             f"You are a software developer who processes JSON data. Here is the text from the document:\n\n"
-            f"{content}\n\n"
-            f"Output the JSON from the document text in the format example below. "
-            f"Do not use the example format as it is, just use it as a reference to structure your response:\n{format}\n\n"
-            f"Only include the fields that are in the keys prompt and nothing else and the response should be in the same JSON format with same keys:\n{columnDefs}\n"
+            f"DOCUMENT CONTENT - {content}\n\n"
+            f"You need to extract the information from DOCUMENT CONTENT based on this column definition provided  -> Only include the fields that are in the USER REQUESTED JSON and the response should be in the same JSON format with same keys: \n USER REQUESTED FOR THIS DATA - > \n{columnDefs}\n"
             f"Additionally:\n"
-            f"- Render data into an API key-value structure for example {{ 'name': 'John Doe', 'education': 'MIT', 'experience': 'Google' }}.\n"
+            f"- Render data into an API key-value structure for example {{ 'name': 'John Doe', 'education': 'MIT', 'experience': 'Google' }} and stick to USER REQUESTED column definition needed. Don't skip on any columns mentioned by the user...if you can't match for any data to that column name just put N/A\n"
             f"- If the value is an array, split it into multiple rows, one per array item.\n"
             f"- There cannot be more than 1 level of nesting so if there is a nested array, just make it a string with comma separated values and don't create a new row for it.\n"
             f"- even if you have multiple data aginst the same key combine them into a string with comma separated values and don't create a new row for it.\n"
