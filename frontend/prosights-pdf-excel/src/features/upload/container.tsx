@@ -463,8 +463,8 @@ const UploadContainer: React.FC = () => {
           pagination={true}
           paginationPageSize={15}
           onGridReady={onGridReady}
-          tooltipShowDelay={500}
-          tooltipHideDelay={500}
+          tooltipShowDelay={1500}
+          tooltipHideDelay={1000}
           enableCellTextSelection={true}
           ensureDomOrder={true}
           tooltipInteraction={true}
