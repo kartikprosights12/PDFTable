@@ -461,13 +461,14 @@ const UploadContainer: React.FC = () => {
           columnDefs={columnDefs}
           domLayout="autoHeight"
           pagination={true}
-          paginationPageSize={20}
+          paginationPageSize={15}
           onGridReady={onGridReady}
           tooltipShowDelay={500}
           tooltipHideDelay={500}
           enableCellTextSelection={true}
           ensureDomOrder={true}
           tooltipInteraction={true}
+          paginationPageSizeSelector={[10,15,20,50,100]}
         />
       </div>
       {isModalOpen && (
