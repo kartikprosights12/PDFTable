@@ -16,3 +16,4 @@ class Document(Base):
     updated_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)
     user = Column(UUID(as_uuid=True), nullable=False)
     file_url = Column(String, nullable=True)
+    file_hash = Column(Text, unique=True, nullable=False)  # Add this column

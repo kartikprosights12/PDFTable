@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 import json
 from app.models.documents import Document
+from app.utils.hash import compute_file_hash
 
 router = APIRouter()
 
@@ -32,19 +33,36 @@ async def process_uploaded_file_via_zerox(
     """
     # Save the uploaded file to the upload directory
     file_path = os.path.join(UPLOAD_DIR, file.filename)
-    print("columnDefs", columnDefs)
-    print("user", user)
+
     try:
         with open(file_path, "wb") as f:
             f.write(await file.read())
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save uploaded file: {e}")
+    
+    gcp_file_url = upload_to_gcp(GCP_BUCKET_NAME, file_path, 'matrix-documents', file.filename)
 
     try:
-        
-        gcp_file_url = upload_to_gcp(GCP_BUCKET_NAME, file_path, 'matrix-documents', file.filename)
-        # Process the file with Zerox
-        result = await process_file_with_zerox(
+
+        file_hash = compute_file_hash(file_path)
+        # Check if the file already exists in the database
+        existing_doc_query = await db.execute(select(Document).where(Document.file_hash == file_hash))
+        existing_doc = existing_doc_query.scalars().first()
+        print("found an existing document", existing_doc)
+
+        if existing_doc:
+            # If the file exists, update the document data
+            final_result = await call_model_with_prompt(json.loads(existing_doc.structure), columnDefs)
+            document_id = await create_document_record(file.filename, datetime.now(), final_result, existing_doc.structure, user, db, gcp_file_url, file_hash)
+
+            return {
+                "message": "File already exists. Updated document data.",
+                "document_id": existing_doc.id,
+                "result": final_result,
+            }
+        else:
+            
+            result = await process_file_with_zerox(
             file_path=file_path,
             output_dir=OUTPUT_DIR,
             select_pages=select_pages
@@ -55,9 +73,12 @@ async def process_uploaded_file_via_zerox(
             for page in result.pages
         ])
         final_result = await call_model_with_prompt(result.pages,columnDefs)
-        document_id = await create_document_record(file.filename, datetime.now(), final_result, structure_as_json, user, db, gcp_file_url)
+        document_id = await create_document_record(file.filename, datetime.now(), final_result, structure_as_json, user, db, gcp_file_url, file_hash)
         
         return {"message": "File processed successfully", "result": final_result, "document_id": document_id}
+        
+        # Process the file with Zerox
+       
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:

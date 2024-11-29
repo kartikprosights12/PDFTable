@@ -12,7 +12,8 @@ async def create_document_record(
     structure: str,
     user: str,
     db: AsyncSession,
-    gcp_file_url: str
+    gcp_file_url: str = None,
+    file_hash: str = None
 ):
     """
     Create a document record in the database.
@@ -45,7 +46,8 @@ async def create_document_record(
             structure=structure,
             updated_at=datetime.utcnow(),
             user=user_record.id,
-            file_url=gcp_file_url
+            file_url=gcp_file_url,
+            file_hash=file_hash
         )
 
         # Add to the database
