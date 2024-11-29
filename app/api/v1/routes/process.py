@@ -59,6 +59,7 @@ async def process_uploaded_file_via_zerox(
                 "message": "File already exists. Updated document data.",
                 "document_id": existing_doc.id,
                 "result": final_result,
+                "document_url": gcp_file_url
             }
         else:
             
@@ -131,6 +132,7 @@ async def update_document_data(
             "message": "Document updated successfully",
             "document_id": document_id,
             "result": updated_data,
+            "document_url": document.file_url
         }
 
     except HTTPException:

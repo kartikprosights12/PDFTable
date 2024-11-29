@@ -2,7 +2,10 @@ import React from "react";
 import { PiLinkBreakBold } from "react-icons/pi";
 
 const CustomTooltip = (props: any) => {
-  const { link } = props; // Retrieve tooltip data
+  const { link, value = "" } = props; // Retrieve tooltip data
+
+  // Determine what to display for the page
+  const displayValue = value === "N/A" ? "" : `Page ${value}`;
 
   return (
     <div
@@ -21,7 +24,7 @@ const CustomTooltip = (props: any) => {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        <span>Page 2</span>
+        {displayValue && <span>{displayValue}</span>} {/* Conditionally render */}
         {link && (
           <a
             href={link}
@@ -37,7 +40,7 @@ const CustomTooltip = (props: any) => {
               padding: "4px",
             }}
           >
-              {<PiLinkBreakBold size={28} />}
+            {<PiLinkBreakBold size={28} />}
           </a>
         )}
       </div>

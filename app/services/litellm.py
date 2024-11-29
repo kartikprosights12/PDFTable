@@ -3,47 +3,77 @@ import json
 import re
 from litellm import completion
 from app.core.config import settings
+from app.utils.validateResponse import validate_response
+
+
+def generate_response_schema(columnDefs: str):
+    # Parse the columnDefs string into a Python object
+    columns = json.loads(columnDefs)  # Assuming columnDefs is a JSON string
+    
+    # Create schema dynamically
+    schema = {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "description": "The page number where the data was extracted."
+                }
+            },
+            "required": ["page"],
+            "additionalProperties": False
+        }
+    }
+
+    # Add fields from columnDefs
+    for column in columns:
+        field = column["field"]
+        schema["items"]["properties"][field] = {
+            "type": "string",
+            "description": f"The value extracted for {field}. Set to 'N/A' if not found."
+        }
+
+    return schema
 
 async def call_model_with_prompt(content: str, columnDefs: str, max_tokens: int = 4096):
+    model = settings.ZEROX_MODEL
+    provider = settings.ZEROX_PROVIDER
     
     try:
         if not columnDefs:
             columnDefs = """{ headerName: "Document Name", field: "documentName" },
     { headerName: "Date", field: "Date" },
-    { headerName: "Company Name", field: "companyName" },
-    { headerName: "Company Description", field: "companyDescription" },
-    { headerName: "Company Business Model", field: "companyBusinessModel" },
-    { headerName: "Company Industry", field: "companyIndustry" },
-    { headerName: "List of Management Team", field: "listOfManagementTeam" },
-    { headerName: "Revenue", field: "revenue" },
-    { headerName: "Revenue Growth", field: "revenueGrowth" },
-    { headerName: "Gross Profit", field: "grossProfit" },
-    { headerName: "EBITDA", field: "ebitda" },
-    { headerName: "Capex", field: "capex" }"""
+    { headerName: "Company Name", "page":"insert the page number", field: "companyName" },
+    { headerName: "Company Description", "page":"insert the page number", field: "companyDescription" },
+    { headerName: "Company Business Model", "page":"insert the page number", field: "companyBusinessModel" },
+    { headerName: "Company Industry", "page":"insert the page number", field: "companyIndustry" },
+    { headerName: "Revenue", "page":"insert the page number", field: "revenue" },
+    { headerName: "Gross Profit", "page":"insert the page number", field: "grossProfit" },
+    { headerName: "EBITDA", "page":"insert the page number", field: "ebitda" },
+    { headerName: "Capex", "page":"insert the page number", field: "capex" }"""
             
 
-        # Example format to guide the model
-        format = """[
-          { "name": "John Doe", "education": "MIT", "experience": "Google", ... }
-        ]"""        
+        # Example format to guide the model      
         prompt = (
-            f"You are a software developer who processes JSON data. Here is the text from the document:\n\n"
-            f"DOCUMENT CONTENT - {content}\n\n"
-            f"You need to extract the information from DOCUMENT CONTENT based on this column definition provided  -> Only include the fields that are in the USER REQUESTED JSON and the response should be in the same JSON format with same keys: \n USER REQUESTED FOR THIS DATA - > \n{columnDefs}\n"
-            f"Additionally:\n"
-            f"- Render data into an API key-value structure for example {{ 'name': 'John Doe', 'education': 'MIT', 'experience': 'Google' }} and stick to USER REQUESTED column definition needed. Don't skip on any columns mentioned by the user...if you can't match for any data to that column name just put N/A\n"
-            f"- If the value is an array, split it into multiple rows, one per array item.\n"
-            f"- There cannot be more than 1 level of nesting so if there is a nested array, just make it a string with comma separated values and don't create a new row for it.\n"
-            f"- even if you have multiple data aginst the same key combine them into a string with comma separated values and don't create a new row for it.\n"
-            f"- if you have a list of objects, make it a string with comma separated values and don't create a new row for it.\n"
-            f"- when generating the json the key of the value has to be the field name from the columnDefs \n"
-            f"- the field/key name in json should small case with spaces changed with _ \n"
-            f"- no comments to be added in the json or code that you send, it needs to be just in pure json structure \n"
-        )        
+                f"You are a software developer working with JSON data. Extract the relevant information based on the column definitions provided below.\n"
+                f"\nDOCUMENT CONTENT:\n{content}\n"
+                f"\nCOLUMN DEFINITIONS:\n{columnDefs}\n"
+                f"\nGenerate the JSON response strictly adhering to the following format. Only include keys that match the column definitions. Ensure that:\n"
+                f"1. The response is in valid JSON format.\n"
+                f"2. Keys in the JSON are in lowercase, with spaces replaced by underscores.\n"
+                f"3. Include the page number for each data point. The `page` field must be a single integer representing the page number or `0` if the page number is unavailable. \n"
+                f"4. If no data matches a column, use 'N/A' but only for the field and not for page.\n"
+                f"5. The JSON must not contain extra fields or comments.\n"
+                f"6. Combine multiple values for the same field into a single string, separated by commas.\n"
+                f"7. Arrays and nested objects should be converted into a comma-separated string.\n"
+                f"\nEXAMPLE OUTPUT FORMAT:\n"
+                f"[{{\"field\": \"value\", \"page\": 1}}, {{\"field_name\": \"value\", \"page\": 2}}]\n"
+            )             
         messages = [{"role": "user", "content": prompt}]
-        print("messages: \n\n  ", messages)
-        model = settings.ZEROX_MODEL
-        provider = settings.ZEROX_PROVIDER
+        print("prompt: \n\n  ", prompt)
+        
+
         # Use the Completion class from litellm to call the API
         response = completion(
             model=f"{provider}/{model}",
@@ -58,17 +88,19 @@ async def call_model_with_prompt(content: str, columnDefs: str, max_tokens: int 
             raise RuntimeError(f"Failed to find JSON in response. Full response:\n{raw_content}")
         
         json_content = json_match.group(1)
-        
+        print("Valid JSON response:", json.loads(json_content))
         # Parse JSON data
         try:
             parsed_data = json.loads(json_content)
+            print("Valid JSON response:", parsed_data)
+            validate_response(parsed_data)
         except json.JSONDecodeError as e:
             raise RuntimeError(f"Failed to decode JSON: {e}\nExtracted Content: {json_content}")
         
         # Return the parsed JSON data
         return {"message": "Successfully parsed JSON", "data": parsed_data}
     except Exception as e:
-        raise RuntimeError(f"Failed to call Anthropic: {e}")
+        raise RuntimeError(f"Failed to call LLM: {e}")
 
 
 async def find_columns_from_prompt(query: str, max_tokens: int = 4096):
@@ -85,7 +117,7 @@ async def find_columns_from_prompt(query: str, max_tokens: int = 4096):
         )        
         print("prompt: \n\n  ", prompt)
         messages = [{"role": "user", "content": prompt}]
-        print("messages: \n\n  ", messages)
+
         model = settings.ZEROX_MODEL
         provider = settings.ZEROX_PROVIDER
         # Use the Completion class from litellm to call the API

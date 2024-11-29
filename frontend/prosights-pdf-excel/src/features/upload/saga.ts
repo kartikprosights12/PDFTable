@@ -9,7 +9,7 @@ function* handleUpload(action: {
   const { id, file, fields, columnDefs, userId } = action.payload;
   console.log("handleUpload", userId);
   try {
-    const response: { document_id: string; result: { data: [] } } = yield call(
+    const response: { document_id: string; document_url: string; result: { data: [] } } = yield call(
       uploadPDF,
       file,
       fields,
@@ -17,7 +17,7 @@ function* handleUpload(action: {
       userId
     );
     const results = response.result?.data || [];
-    yield put(uploadSuccess({ id, results }));
+    yield put(uploadSuccess({ id, results, document_url: response?.document_url }));
     if (response.document_id) {
         yield put(updateDocumentId({ tempId: id, documentId: response.document_id }));
       }

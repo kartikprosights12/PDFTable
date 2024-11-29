@@ -10,6 +10,7 @@ interface UploadState {
     columnDefs: any;
     userId: string;
     documentId?: string;
+    document_url?: string;
   }[];
 }
 
@@ -52,12 +53,15 @@ const uploadSlice = createSlice({
     },
     uploadSuccess(
       state,
-      action: PayloadAction<{ id: string; results: { [key: string]: any }[] }>
+      action: PayloadAction<{ id: string; document_url: string; results: { [key: string]: any }[] }>
     ) {
       const upload = state.uploads.find((u) => u.id === action.payload.id);
       if (upload) {
         upload.loading = false;
         upload.results = action.payload.results;
+        if (action.payload.document_url) {
+          upload.document_url = action.payload.document_url;
+        }
       }
     },
     uploadFailure(state, action: PayloadAction<{ id: string; error: string }>) {

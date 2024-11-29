@@ -15,12 +15,16 @@ import {
 } from "react-icons/pi";
 import { urls } from "@/config/urls";
 import CustomTooltip from "../../components/CustomTooltip"; // Import custom tooltip component
-import { ColDef } from "ag-grid-community";
+import {  ColDef as BaseColDef } from "ag-grid-community";
 
 // Define an interface for the expected structure of results
 interface UploadResults {
   [key: string]: any; // Adjust the type as necessary
 }
+interface CustomColDef extends BaseColDef {
+  page?: string; // Add the 'page' property
+}
+
 
 const UploadContainer: React.FC = () => {
   const dispatch = useDispatch();
@@ -40,82 +44,128 @@ const UploadContainer: React.FC = () => {
   // Local state
   const [rowData, setRowData] = useState<any[]>([]);
   const [fields] = useState<string[]>([""]); // Fields state
-  const [columnDefs, setColumnDefs] = useState<ColDef[]>([
+  const [columnDefs, setColumnDefs] = useState<CustomColDef[]>([
     {
       headerName: "Document",
       field: "document",
-      tooltipComponentParams: { link: "https://example.com/document" },
+      page: "insert the page number",
+      tooltipComponentParams: { link: "#" },
     },
     {
       headerName: "Date",
       field: "date",
       tooltipField: "date",
-      tooltipComponentParams: { link: "https://example.com/document" },
+      page: "insert the page number",
+      tooltipComponentParams: (params: any) => ({
+        link: params.data.document_url || "#",
+        value: params.data.page, // Pass the page field dynamically
+      }),
     },
     {
       headerName: "Company Name",
-      field: "companyName",
-      tooltipField: "companyName",
-      tooltipComponentParams: { link: "https://example.com/document" },
+      field: "company_name",
+      tooltipField: "company_name",
+      page: "insert the page number",
+      tooltipComponentParams: (params: any) => ({
+        link: params.data.document_url || "#",
+        value: params.data.page, // Pass the page field dynamically
+      }),
     },
     {
       headerName: "Company Industry",
-      field: "companyIndustry",
-      tooltipField: "companyIndustry",
-      tooltipComponentParams: { link: "https://example.com/document" },
+      field: "company_industry",
+      tooltipField: "company_industry",
+      page: "insert the page number",
+      tooltipComponentParams: (params: any) => ({
+        link: params.data.document_url || "#",
+        value: params.data.page, // Pass the page field dynamically
+      }),
     },
     {
       headerName: "Revenue",
       field: "revenue",
       tooltipField: "revenue",
-      tooltipComponentParams: { link: "https://example.com/document" },
+      page: "insert the page number",
+      tooltipComponentParams: (params: any) => ({
+        link: params.data.document_url || "#",
+        value: params.data.page, // Pass the page field dynamically
+      }),
     },
     {
       headerName: "Gross Profit",
-      field: "grossProfit",
-      tooltipField: "grossProfit",
-      tooltipComponentParams: { link: "https://example.com/document" },
+      field: "gross_profit",
+      tooltipField: "gross_profit",
+      page: "insert the page number",
+      tooltipComponentParams: (params: any) => ({
+        link: params.data.document_url || "#",
+        value: params.data.page, // Pass the page field dynamically
+      }),
     },
     {
       headerName: "EBITDA",
       field: "ebitda",
       tooltipField: "ebitda",
-      tooltipComponentParams: { link: "https://example.com/document" },
+      page: "insert the page number",
+      tooltipComponentParams: (params: any) => ({
+        link: params.data.document_url || "#",
+        value: params.data.page, // Pass the page field dynamically
+      }),
     },
     {
       headerName: "Capex",
       field: "capex",
       tooltipField: "capex",
-      tooltipComponentParams: { link: "https://example.com/document" },
+      page: "insert the page number",
+      tooltipComponentParams: (params: any) => ({
+        link: params.data.document_url || "#",
+        value: params.data.page, // Pass the page field dynamically
+      }),
     },
   ]);
 
   useEffect(() => {
     if (uploads && uploads.length > 0) {
+      console.log('uplpoads', uploads);
+      const documentUrl = uploads[0].document_url || "#";
+      console.log('documentUrl', documentUrl);
       const updatedRows = uploads.map((upload) => {
-        // Create a placeholder row dynamically based on columnDefs
         const placeholderRow: { [key: string]: any } = {};
 
+        // Initialize all fields as "Reading..." placeholders
         columnDefs.forEach((colDef) => {
-          const field = colDef.field; //quantity
+          const field = colDef.field;
           if (field) {
-            // Ensure field is defined
-            placeholderRow[field] = upload.loading
-              ? "Reading..."
-              : (upload.results as UploadResults)[field] || "N/A"; // Cast results to UploadResults
+            placeholderRow[field] = "Reading...";
           }
         });
+
+        // Process the API response to update placeholders
+        if (upload?.results && upload?.results.length > 0) {
+          console.log("inside results", upload.results);
+          upload.results.forEach((entry: any) => {
+            const [key, value] = Object.entries(entry)[0]; // Extract key-value pair
+            if (key !== "page") {
+              placeholderRow[key] = value || "N/A"; // Update value or set to "N/A" if undefined or empty
+            }
+            placeholderRow.page = entry.page || "N/A"; // Ensure the page number is also included
+          });
+          columnDefs.forEach((colDef) => {
+            const field = colDef.field;
+            if (field && placeholderRow[field] == "Reading...") {
+              placeholderRow[field] = "N/A";
+            }
+          });
+        }
 
         // Add static fields for document and date
         placeholderRow.document = upload.file.name;
         placeholderRow.date = new Date().toLocaleDateString();
-        placeholderRow.pageNumber = 2;
-        placeholderRow.tooltip = `Fetched from Page 2`;
+        placeholderRow.document_url = documentUrl;
 
         return placeholderRow;
       });
 
-      setRowData(updatedRows);
+      setRowData(updatedRows); // Update the grid data
     }
   }, [uploads, columnDefs]);
 
@@ -161,7 +211,10 @@ const UploadContainer: React.FC = () => {
       field: newColumnField,
       flex: 1,
       tooltipField: newColumnField,
-      tooltipComponentParams: { link: "https://example.com/document" },
+      tooltipComponentParams: (params: any) => ({
+        link: params.data.document_url || "#",
+        value: params.data.page, // Pass the page field dynamically
+      }),
     };
 
     setColumnDefs((prev) => [...prev, newColumnDef]);
@@ -174,7 +227,9 @@ const UploadContainer: React.FC = () => {
             row.document === upload.file.name
               ? {
                   ...row,
-                  [newColumnField]: (upload.results as UploadResults)[newColumnField] || "Reading...",
+                  [newColumnField]:
+                    (upload.results as UploadResults)[newColumnField] ||
+                    "Reading...",
                 }
               : row
           )
@@ -230,15 +285,27 @@ const UploadContainer: React.FC = () => {
           headerName: col,
           field: col.toLowerCase().replace(/ /g, "_"),
           flex: 1,
-          tooltipField: col.toLowerCase().replace(/ /g, "_"), 
-          tooltipComponentParams: { link: "https://example.com/document" }
+          page: "insert the page number",
+          tooltipField: col.toLowerCase().replace(/ /g, "_"),
+          tooltipComponentParams: (params: any) => ({
+            link: params.data.document_url || "#",
+            value: params.data.page, // Pass the page field dynamically
+          }),
         }));
 
         // Add preset columns (if needed)
         const presetColumns = [
-          { headerName: "Document", field: "document", flex: 1, tooltipField: "document", tooltipComponentParams: { link: "https://example.com/document" } },
-          { headerName: "Date", field: "date", flex: 1, tooltipField: "date", tooltipComponentParams: { link: "https://example.com/document" }, },
-          
+          {
+            headerName: "Document",
+            field: "document",
+            page: "insert the page number",
+            flex: 1,
+            tooltipField: "document",
+            tooltipComponentParams: (params: any) => ({
+              link: params.data.document_url || "#",
+              value: params.data.page, // Pass the page field dynamically
+            }),
+          },
         ];
 
         // Step 2: Update columnDefs with the new columns
@@ -271,6 +338,7 @@ const UploadContainer: React.FC = () => {
             uploadSuccess({
               id: upload.id,
               results: updateData.result.data, // Align with API response structure
+              document_url: updateData.document_url
             })
           );
         });
@@ -286,10 +354,11 @@ const UploadContainer: React.FC = () => {
     }
   };
 
-  const defaultColDef = useMemo<ColDef>(() => {
+  const defaultColDef = useMemo<CustomColDef>(() => {
     return {
       flex: 1,
       minWidth: 100,
+      page: 'insert page number', //custom field used to pass to backend for better prompting to add the page number
       tooltipComponent: CustomTooltip,
     };
   }, []);
@@ -395,6 +464,7 @@ const UploadContainer: React.FC = () => {
           paginationPageSize={20}
           onGridReady={onGridReady}
           tooltipShowDelay={500}
+          tooltipHideDelay={500}
           enableCellTextSelection={true}
           ensureDomOrder={true}
           tooltipInteraction={true}
