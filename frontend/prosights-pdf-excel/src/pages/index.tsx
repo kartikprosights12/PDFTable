@@ -17,7 +17,7 @@ const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) =
     const storedUserId = localStorage.getItem("userId") || "185e3b88-631c-4649-b94e-0a9c5a35ccc0"; // Default userId for testing
 
     if (storedUserId) {
-      dispatch(setUserId({ userId: storedUserId })); // Set userId in Redux store
+      dispatch(setUserId(storedUserId)); // Set userId in Redux store
     }
   }, [dispatch]);
 

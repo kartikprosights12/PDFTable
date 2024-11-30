@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { checkSubscriptionRequest } from "../subscription/reducer";
+import { checkSubscriptionRequest, initiateSubscriptionRequest } from "../subscription/reducer";
 import { RootState } from "@/redux/Store";
 
 const SubscriptionComponent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -16,10 +16,15 @@ const SubscriptionComponent: React.FC<{ children: React.ReactNode }> = ({ childr
 
   useEffect(() => {
     if (userId && !hasCheckedSubscription) {
-      console.log("Dispatching checkSubscriptionRequest...", userId);
-      dispatch(checkSubscriptionRequest(userId));
+      dispatch(checkSubscriptionRequest({ userId })); // Dispatch the check subscription action
     }
   }, [dispatch, hasCheckedSubscription, userId]);
+
+  const handleBuySubscription = () => {
+    if (userId) {
+      dispatch(initiateSubscriptionRequest({ userId })); // Dispatch the initiate subscription action
+    }
+  };
 
   if (loading) {
     return (
@@ -63,10 +68,16 @@ const SubscriptionComponent: React.FC<{ children: React.ReactNode }> = ({ childr
           <h2 className="text-xl font-semibold text-gray-800 mb-4">
             Subscription Required
           </h2>
-          <p className="text-gray-600">
+          <p className="text-gray-600 mb-4">
             Please subscribe to access this feature. If you believe this is an
             error, contact support.
           </p>
+          <button
+            onClick={handleBuySubscription}
+            className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-300"
+          >
+            Buy Subscription
+          </button>
         </div>
       </div>
     );
