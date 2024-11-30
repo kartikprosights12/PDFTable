@@ -31,6 +31,9 @@ class User(BaseModel):
 class CreateCheckoutLinkRequest(BaseModel):
     user_id: str
 
+class ValidateSessionRequest(BaseModel):
+    session_id: str
+
 @router.post("")
 async def create_user(
     user: User = Body(..., description="User object from the frontend"),
@@ -181,7 +184,7 @@ async def create_checkout_link(
     
 @router.post("/subscriptions/validate")
 async def validate_subscription_session(
-    session_id: str = Body(..., description="Stripe checkout session ID"),
+    session_id: ValidateSessionRequest,
     db: AsyncSession = Depends(get_db)
 ):
     """
