@@ -15,18 +15,21 @@ const SubscriptionComponent: React.FC<{ children: React.ReactNode }> = ({ childr
   const userId = useSelector((state: RootState) => state.user.userId);
 
   useEffect(() => {
+    // Perform subscription check only if the user is authenticated and subscription status hasn't been checked
     if (userId && !hasCheckedSubscription) {
-      dispatch(checkSubscriptionRequest({ userId })); // Dispatch the check subscription action
+      dispatch(checkSubscriptionRequest({ userId }));
     }
   }, [dispatch, hasCheckedSubscription, userId]);
 
+  // Handle "Buy Subscription" button click
   const handleBuySubscription = () => {
     if (userId) {
-      dispatch(initiateSubscriptionRequest({ userId })); // Dispatch the initiate subscription action
+      dispatch(initiateSubscriptionRequest({ userId }));
     }
   };
 
-  if (loading) {
+  // Show loading state while subscription status is being checked
+  if (loading || !hasCheckedSubscription) {
     return (
       <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center">
         <div className="max-w-xl w-full bg-white rounded-lg shadow-md px-6 py-8 text-center">
@@ -51,26 +54,23 @@ const SubscriptionComponent: React.FC<{ children: React.ReactNode }> = ({ childr
             ></path>
           </svg>
           <h2 className="text-xl font-semibold text-gray-800 mb-4">
-            Loading subscription status...
+            Checking subscription status...
           </h2>
-          <p className="text-gray-600">
-            Please wait while we check your subscription status.
-          </p>
+          <p className="text-gray-600">Please wait while we verify your subscription status.</p>
         </div>
       </div>
     );
   }
 
+  // Show subscription required screen if the user doesn't have an active subscription
   if (!subscriptionStatus) {
     return (
       <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center">
         <div className="max-w-xl w-full bg-white rounded-lg shadow-md px-6 py-8 text-center">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">
-            Subscription Required
-          </h2>
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Subscription Required</h2>
           <p className="text-gray-600 mb-4">
-            Please subscribe to access this feature. If you believe this is an
-            error, contact support.
+            Please subscribe to access this feature. If you believe this is an error, contact
+            support.
           </p>
           <button
             onClick={handleBuySubscription}
@@ -83,6 +83,7 @@ const SubscriptionComponent: React.FC<{ children: React.ReactNode }> = ({ childr
     );
   }
 
+  // Render children if the subscription is active
   return <>{children}</>;
 };
 

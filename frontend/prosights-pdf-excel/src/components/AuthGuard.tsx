@@ -1,21 +1,29 @@
-// src/components/AuthGuard.tsx
 import { useAuth0 } from "@auth0/auth0-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 
 const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading, loginWithRedirect } = useAuth0();
   const router = useRouter();
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      loginWithRedirect({
-        appState: { returnTo: router.pathname },
-      });
-    }
+    const handleAuthCheck = async () => {
+      if (!isLoading) {
+        if (!isAuthenticated) {
+          await loginWithRedirect({
+            appState: { returnTo: router.pathname },
+          });
+        } else {
+          setIsAuthChecked(true); // Mark auth check complete if authenticated
+        }
+      }
+    };
+
+    handleAuthCheck();
   }, [isLoading, isAuthenticated, loginWithRedirect, router]);
 
-  if (isLoading) {
+  if (isLoading || !isAuthChecked) {
     return (
       <div className="min-h-screen flex flex-col justify-center items-center bg-gray-100">
         <div className="text-center">
@@ -48,10 +56,7 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     );
   }
 
-  if (!isAuthenticated) {
-    return null; // Prevent rendering protected content while redirecting
-  }
-
+  // If the user is authenticated and auth check is complete, render the children
   return <>{children}</>;
 };
 
