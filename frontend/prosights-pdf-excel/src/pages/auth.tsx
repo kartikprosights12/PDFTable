@@ -2,9 +2,9 @@
 import { useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useRouter } from "next/router";
-import { urls } from "@/config/urls";
 import { useDispatch } from "react-redux";
 import { setUserId } from "@/redux/UserSlice";
+import { userAuthAPI } from "./api/subscription/users/api";
 
 const AuthPage: React.FC = () => {
   const { user, isAuthenticated, getAccessTokenSilently } = useAuth0();
@@ -17,33 +17,11 @@ const AuthPage: React.FC = () => {
         try {
           // Retrieve the token
           const token = await getAccessTokenSilently();
-
           // Call the backend API to save user info
-          const apiUrl = urls.apiBaseUrl + "/api/v1/users";
-          const response = await fetch(apiUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(user),
-          });
-
-          if (response.ok) {
-            // Save user ID to Redux
-            const responseData = await response.json();
-            const userId = responseData.user_id;
-            if (userId) {
-              localStorage.setItem("userId", userId);
-              dispatch(setUserId(userId)); // 'sub' contains the user ID from Auth0
-            } else {
-              console.error("User ID is undefined");
-            }
-            // Redirect to the main platform
-            router.push("/");
-          } else {
-            console.error("Failed to store user info");
-          }
+          const getUserID = await userAuthAPI(user, token);
+          dispatch(setUserId(getUserID));
+          // Redirect to the main platform
+           router.push("/");
         } catch (error) {
           console.error("Error during token retrieval or API call:", error);
         }
@@ -55,7 +33,7 @@ const AuthPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center">
-      <div className="max-w-xl w-full bg-white rounded-lg shadow-md px-6 py-8 text-center">
+       <div className="text-center">
         <svg
           className="animate-spin mx-auto mb-6 w-12 h-12 text-blue-500"
           xmlns="http://www.w3.org/2000/svg"
@@ -80,7 +58,7 @@ const AuthPage: React.FC = () => {
           Loading user information...
         </h2>
         <p className="text-gray-600">
-          Please wait while we retrieve your account details.
+          Please wait while we retrieve your account details from pages/auth.tsx
         </p>
       </div>
     </div>

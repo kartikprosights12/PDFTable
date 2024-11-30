@@ -30,8 +30,7 @@ const UploadContainer: React.FC = () => {
   const dispatch = useDispatch();
   const userId =
     useSelector((state: RootState) => state.user.userId) ||
-    localStorage.getItem("userEmail");
-  console.log("userId ----", userId);
+localStorage.getItem("userEmail");
   // Redux state
   const uploads = useSelector((state: RootState) => state.upload.uploads);
 
@@ -125,9 +124,7 @@ const UploadContainer: React.FC = () => {
 
   useEffect(() => {
     if (uploads && uploads.length > 0) {
-      console.log('uplpoads', uploads);
       const documentUrl = uploads[0].document_url || "#";
-      console.log('documentUrl', documentUrl);
       const updatedRows = uploads.map((upload) => {
         const placeholderRow: { [key: string]: any } = {};
 
@@ -141,7 +138,6 @@ const UploadContainer: React.FC = () => {
 
         // Process the API response to update placeholders
         if (upload?.results && upload?.results.length > 0) {
-          console.log("inside results", upload.results);
           upload.results.forEach((entry: any) => {
             const [key, value] = Object.entries(entry)[0]; // Extract key-value pair
             if (key !== "page") {
@@ -464,7 +460,7 @@ const UploadContainer: React.FC = () => {
           paginationPageSize={15}
           onGridReady={onGridReady}
           tooltipShowDelay={1500}
-          tooltipHideDelay={1000}
+          tooltipHideDelay={500}
           enableCellTextSelection={true}
           ensureDomOrder={true}
           tooltipInteraction={true}

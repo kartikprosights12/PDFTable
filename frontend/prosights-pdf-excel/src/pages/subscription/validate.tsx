@@ -17,7 +17,6 @@ const ValidateSubscriptionPage: React.FC = () => {
         const response = await axios.post(apiBaseUrl + "/api/v1/users/subscriptions/validate", {
           session_id
         });
-        console.log("response", response);
         if (response.data.status === "active") {
           setValidationResult("Subscription is active.");
           router.push("/");
