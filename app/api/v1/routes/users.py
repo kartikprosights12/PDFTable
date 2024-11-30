@@ -184,7 +184,7 @@ async def create_checkout_link(
     
 @router.post("/subscriptions/validate")
 async def validate_subscription_session(
-    session_id: ValidateSessionRequest,
+    request: ValidateSessionRequest,
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -200,6 +200,7 @@ async def validate_subscription_session(
     try:
         # Step 1: Retrieve the Stripe session details
         try:
+            session_id = request.session_id
             session = stripe.checkout.Session.retrieve(session_id)
             print(session)
         except stripe.error.StripeError as e:
