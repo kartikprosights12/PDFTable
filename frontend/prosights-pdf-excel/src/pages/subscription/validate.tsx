@@ -2,8 +2,6 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { urls } from "@/config/urls";
-import { useSelector } from "react-redux";
-import { RootState } from "@/redux/Store";
 
 const ValidateSubscriptionPage: React.FC = () => {
   const router = useRouter();
@@ -11,16 +9,13 @@ const ValidateSubscriptionPage: React.FC = () => {
   const apiBaseUrl = urls.apiBaseUrl;
 
   const [validationResult, setValidationResult] = useState<string | null>(null);
-  const userId = useSelector((state: RootState) => state.user.userId);
-  console.log('userId aaaaa', userId);
   useEffect(() => {
     if (!session_id) return;
 
     const validateSession = async () => {
       try {
         const response = await axios.post(apiBaseUrl + "/api/v1/users/subscriptions/validate", {
-          session_id,
-          user_id: userId,
+          session_id
         });
         console.log("response", response);
         if (response.data.status === "active") {
@@ -36,7 +31,7 @@ const ValidateSubscriptionPage: React.FC = () => {
     };
 
     validateSession();
-  }, [session_id, apiBaseUrl, router, userId]);
+  }, [session_id, apiBaseUrl, router]);
 
   if (!session_id) {
     return (

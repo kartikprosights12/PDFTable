@@ -182,7 +182,6 @@ async def create_checkout_link(
 @router.post("/subscriptions/validate")
 async def validate_subscription_session(
     session_id: str = Body(..., description="Stripe checkout session ID"),
-    user_id: str = Body(..., description="Stripe checkout session ID"),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -214,7 +213,7 @@ async def validate_subscription_session(
             raise HTTPException(status_code=400, detail="Stripe session does not include user email.")
 
         # Step 3: Fetch user ID based on email
-        user_query = await db.execute(select(UserModel).where(UserModel.id == user_id))
+        user_query = await db.execute(select(UserModel).where(UserModel.email == session.customer_email))
         user = user_query.scalars().first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found for the given email.")
