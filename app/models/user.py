@@ -15,5 +15,6 @@ class User(Base):
     given_name = Column(String, nullable=True)
     family_name = Column(String, nullable=True)
     name = Column(String, nullable=True)
+    skip_subscription = Column(Boolean, default=True)
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow)  # Ensure timezone support
     email_verified = Column(Boolean, default=False)
